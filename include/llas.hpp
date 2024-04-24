@@ -41,6 +41,7 @@
 #define __LLAS_HPP__
 
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -1276,6 +1277,8 @@ LasData_t read(const std::string& filePath,
 /// @return `Las data` (`LasData_t`): Las content
 LasData_t read(const std::string& filePath,
                const bool pointDataOnly) {
+  const auto startTime = std::chrono::system_clock::now();
+
 #if defined(LLAS_PRINT_BYTES)
   std::cout << "LLAS_CHAR   = " << sizeof(LLAS_CHAR) << std::endl;
   std::cout << "LLAS_SCHAR  = " << sizeof(LLAS_SCHAR) << std::endl;
@@ -1383,6 +1386,10 @@ LasData_t read(const std::string& filePath,
 
     lasData->validate();
   }
+
+  const auto endTime = std::chrono::system_clock::now();
+  const double elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+  _logInfo("Elapsed time: " + std::to_string(elapsedTime * 1e-6) + " [sec]");
 
   return lasData;
 };

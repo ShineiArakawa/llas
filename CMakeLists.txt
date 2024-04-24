@@ -16,7 +16,8 @@ elseif(UNIX)
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
-add_definitions(-DFULL_VERBOSITY)
+add_definitions(-DLLAS_PRINT_BYTES)
+add_definitions(-DLLAS_FULL_VERBOSITY)
 
 # #################################################
 # #### Envirionment Variables #####################

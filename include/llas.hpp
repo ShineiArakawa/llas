@@ -41,6 +41,9 @@
 #define __LLAS_HPP__
 
 #include <array>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -55,10 +58,10 @@
 #define LLAS_UCHAR unsigned char
 #define LLAS_SHORT short
 #define LLAS_USHORT unsigned short
-#define LLAS_LONG long
-#define LLAS_ULONG unsigned long
-#define LLAS_LLONG long long
-#define LLAS_ULLONG unsigned long long
+#define LLAS_LONG int32_t
+#define LLAS_ULONG uint32_t
+#define LLAS_LLONG int64_t
+#define LLAS_ULLONG uint64_t
 #define LLAS_FLOAT float
 #define LLAS_DOUBLE double
 #define LLAS_STRING char*
@@ -835,7 +838,7 @@ using LasData_t = std::shared_ptr<LasData>;
 // Utility Functions
 // ==========================================================================
 inline static void _logInfo(const std::string& message) {
-#if defined(FULL_VERBOSITY)
+#if defined(LLAS_FULL_VERBOSITY)
   std::cout << message << std::endl;
 #endif
 }
@@ -995,7 +998,7 @@ PublicHeader _readPublicHeader(std::ifstream& file) {
     // Legacy Number of Point by Return
     const std::streamsize nBytes = PublicHeader::NUM_BYTES_LEGACY_NUM_OF_POINT_BY_RETURN;
     _readBytes(file, buffer, nBytes);
-    for (int i = 0; i < nBytes / sizeof(LLAS_ULONG); ++i) {
+    for (std::streamsize i = 0; i < nBytes / sizeof(LLAS_ULONG); ++i) {
       std::memcpy(&publicHeader.legacyNumOfPointByReturn[i],
                   buffer.data() + i * sizeof(LLAS_ULONG),
                   sizeof(LLAS_ULONG));
@@ -1118,7 +1121,7 @@ PublicHeader _readPublicHeader(std::ifstream& file) {
     // Number of Points by Return
     const std::streamsize nBytes = PublicHeader::NUM_BYTES_NUM_OF_POINTS_BY_RETURN;
     _readBytes(file, buffer, nBytes);
-    for (int i = 0; i < nBytes / sizeof(LLAS_ULLONG); ++i) {
+    for (std::streamsize i = 0; i < nBytes / sizeof(LLAS_ULLONG); ++i) {
       std::memcpy(&publicHeader.numOfPointsByReturn[i],
                   buffer.data() + i * sizeof(LLAS_ULLONG),
                   sizeof(LLAS_ULLONG));
@@ -1273,6 +1276,21 @@ LasData_t read(const std::string& filePath,
 /// @return `Las data` (`LasData_t`): Las content
 LasData_t read(const std::string& filePath,
                const bool pointDataOnly) {
+#if defined(LLAS_PRINT_BYTES)
+  std::cout << "LLAS_CHAR   = " << sizeof(LLAS_CHAR) << std::endl;
+  std::cout << "LLAS_SCHAR  = " << sizeof(LLAS_SCHAR) << std::endl;
+  std::cout << "LLAS_UCHAR  = " << sizeof(LLAS_UCHAR) << std::endl;
+  std::cout << "LLAS_SHORT  = " << sizeof(LLAS_SHORT) << std::endl;
+  std::cout << "LLAS_USHORT = " << sizeof(LLAS_USHORT) << std::endl;
+  std::cout << "LLAS_LONG   = " << sizeof(LLAS_LONG) << std::endl;
+  std::cout << "LLAS_ULONG  = " << sizeof(LLAS_ULONG) << std::endl;
+  std::cout << "LLAS_LLONG  = " << sizeof(LLAS_LLONG) << std::endl;
+  std::cout << "LLAS_ULLONG = " << sizeof(LLAS_ULLONG) << std::endl;
+  std::cout << "LLAS_FLOAT  = " << sizeof(LLAS_FLOAT) << std::endl;
+  std::cout << "LLAS_DOUBLE = " << sizeof(LLAS_DOUBLE) << std::endl;
+  std::cout << "LLAS_STRING = " << sizeof(LLAS_STRING) << std::endl;
+#endif
+
   bool isOK = true;
 
   // ======================================================================================================================

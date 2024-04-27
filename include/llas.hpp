@@ -1271,7 +1271,7 @@ struct ExtendedVariableLengthRecord {
       // Record Length After Header
       const std::streamsize nBytes = ExtendedVariableLengthRecord::NUM_BYTES_RECORD_LENGTH_AFTER_HEADER;
       _readBytes(file, buffer, nBytes);
-      std::memcpy(&evlr.recordLengthAfterHeader, buffer.data(), sizeof(LLAS_USHORT));
+      std::memcpy(&evlr.recordLengthAfterHeader, buffer.data(), sizeof(LLAS_ULLONG));
     }
 
     {

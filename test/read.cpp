@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv) {
   // const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\Palac_Moszna.las");
-  const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las");
+  const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las", false);
   // const auto& data = llas::read("/home/shinaraka/Projects/llas/sample/G_Sw_Anny.laz");
 
   const size_t& nPoints = data->getNumPoints();

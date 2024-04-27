@@ -52,6 +52,12 @@
 #include <string>
 #include <vector>
 
+#if defined(LLAS_STATIC)
+#define LLAS_FUNC_DECL_PREFIX static
+#else
+#define LLAS_FUNC_DECL_PREFIX inline
+#endif
+
 // ==========================================================================
 // Type defines
 // ==========================================================================
@@ -73,7 +79,7 @@
 #define LLAS_BUFFER_SIZE 1024
 
 // ==========================================================================
-// Simple logging function
+// Simple logging macro
 // ==========================================================================
 
 #if defined(LLAS_LOG_DEBUG)
@@ -95,9 +101,9 @@ namespace llas {
 // Utility Functions
 // ==========================================================================
 
-inline static void _readBytes(std::ifstream& ifs,
-                              std::vector<char>& bytes,
-                              const std::streamsize& nBytes) {
+LLAS_FUNC_DECL_PREFIX void _readBytes(std::ifstream& ifs,
+                                      std::vector<char>& bytes,
+                                      const std::streamsize& nBytes) {
   ifs.read(bytes.data(), nBytes);
 }
 
@@ -135,13 +141,13 @@ using vecf_pt = vec_pt<float>;
 using vecd_pt = vec_pt<double>;
 using veci_pt = vec_pt<int>;
 
-inline static float innerProduct(const vec3f_t& vec0,
-                                 const vec3f_t& vec1) {
+LLAS_FUNC_DECL_PREFIX float innerProduct(const vec3f_t& vec0,
+                                         const vec3f_t& vec1) {
   return vec0[0] * vec1[0] + vec0[1] * vec1[1] + vec0[2] * vec1[2];
 }
 
-inline static vec3f_t outerProduct(const vec3f_t& vec0,
-                                   const vec3f_t& vec1) {
+LLAS_FUNC_DECL_PREFIX vec3f_t outerProduct(const vec3f_t& vec0,
+                                           const vec3f_t& vec1) {
   return {
       vec0[1] * vec1[2] - vec0[2] * vec1[1],  // vec0.y * vec1.z - vec0.z * vec1.y
       vec0[2] * vec1[0] - vec0[0] * vec1[2],  // vec0.z * vec1.x - vec0.x * vec1.z
@@ -149,28 +155,28 @@ inline static vec3f_t outerProduct(const vec3f_t& vec0,
   };
 }
 
-inline static void outerProduct(const float& x0, const float& y0, const float& z0,
-                                const float& x1, const float& y1, const float& z1,
-                                float& x, float& y, float& z) {
+LLAS_FUNC_DECL_PREFIX void outerProduct(const float& x0, const float& y0, const float& z0,
+                                        const float& x1, const float& y1, const float& z1,
+                                        float& x, float& y, float& z) {
   x = y0 * z1 - z0 * y1;
   y = z0 * x1 - x0 * z1;
   z = x0 * y1 - y0 * x1;
 }
 
-inline static float length(vec3f_t& vec) {
+LLAS_FUNC_DECL_PREFIX float length(vec3f_t& vec) {
   return std::sqrt(vec[0] * vec[0] +
                    vec[1] * vec[1] +
                    vec[2] * vec[2]);
 }
 
-inline static void normalize(vec3f_t& vec) {
+LLAS_FUNC_DECL_PREFIX void normalize(vec3f_t& vec) {
   const float len = length(vec);
   vec[0] = vec[0] / len;
   vec[1] = vec[1] / len;
   vec[2] = vec[2] / len;
 }
 
-inline static void normalize(float& x, float& y, float& z) {
+LLAS_FUNC_DECL_PREFIX void normalize(float& x, float& y, float& z) {
   const float length = std::sqrt(x * x +
                                  y * y +
                                  z * z);
@@ -826,7 +832,7 @@ struct PublicHeader {
       // Legacy Number of Point by Return
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_LEGACY_NUM_OF_POINT_BY_RETURN;
       _readBytes(file, buffer, nBytes);
-      for (std::streamsize i = 0; i < nBytes / sizeof(LLAS_ULONG); ++i) {
+      for (std::streamsize i = 0; i < nBytes / (std::streamsize)sizeof(LLAS_ULONG); ++i) {
         std::memcpy(&publicHeader.legacyNumOfPointByReturn[i],
                     buffer.data() + i * sizeof(LLAS_ULONG),
                     sizeof(LLAS_ULONG));
@@ -949,7 +955,7 @@ struct PublicHeader {
       // Number of Points by Return
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_NUM_OF_POINTS_BY_RETURN;
       _readBytes(file, buffer, nBytes);
-      for (std::streamsize i = 0; i < nBytes / sizeof(LLAS_ULLONG); ++i) {
+      for (std::streamsize i = 0; i < nBytes / (std::streamsize)sizeof(LLAS_ULLONG); ++i) {
         std::memcpy(&publicHeader.numOfPointsByReturn[i],
                     buffer.data() + i * sizeof(LLAS_ULLONG),
                     sizeof(LLAS_ULLONG));
@@ -1421,40 +1427,40 @@ struct LasData {
 #else
     std::fill_n(logMessage, LLAS_BUFFER_SIZE, '\0');
     sprintf(logMessage, "minCoords        = (%.5lf, %.5lf, %.5lf)", minCoords[0], minCoords[1], minCoords[2]);
-    _logDebug(logMessage);
+    _LLAS_logDebug(logMessage);
 
     std::fill_n(logMessage, LLAS_BUFFER_SIZE, '\0');
-    sprintf(logMessage, "publicHeader.min = (%.5lf, %.5lf, %.5lf)", publicHeader.minX, publicHeader.minY, publicHeader.minZ);
-    _logDebug(logMessage);
+    sprintf(logMessage, "publicHeader.min = (%.5lf, %.5lf, %.5lf)", header.minX, header.minY, header.minZ);
+    _LLAS_logDebug(logMessage);
 
     std::fill_n(logMessage, LLAS_BUFFER_SIZE, '\0');
     sprintf(logMessage, "maxCoords        = (%.5lf, %.5lf, %.5lf)", maxCoords[0], maxCoords[1], maxCoords[2]);
-    _logDebug(logMessage);
+    _LLAS_logDebug(logMessage);
 
     std::fill_n(logMessage, LLAS_BUFFER_SIZE, '\0');
-    sprintf(logMessage, "publicHeader.max = (%.5lf, %.5lf, %.5lf)", publicHeader.maxX, publicHeader.maxY, publicHeader.maxZ);
-    _logDebug(logMessage);
+    sprintf(logMessage, "publicHeader.max = (%.5lf, %.5lf, %.5lf)", header.maxX, header.maxY, header.maxZ);
+    _LLAS_logDebug(logMessage);
 #endif
 
     return true;
   }
 };
 
-using LasData_t = std::shared_ptr<LasData>;
+using LasData_ptr = std::shared_ptr<LasData>;
 
 // ==========================================================================
 // Functions
 // ==========================================================================
 
-LasData_t read(const std::string& filePath,
-               const bool pointDataOnly = true);
+LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
+                                       const bool pointDataOnly = true);
 
 /// @brief Read '.las' format file
 /// @param filePath Path to the las file
 /// @param pointDataOnly Read only "PointDataRecords"
-/// @return `Las data` (`LasData_t`): Las content
-LasData_t read(const std::string& filePath,
-               const bool pointDataOnly) {
+/// @return `Las data` (`LasData_ptr`): Las content
+LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
+                                       const bool pointDataOnly) {
   const auto startTime = std::chrono::system_clock::now();
 
 #if defined(LLAS_PRINT_BYTES)
@@ -1470,6 +1476,53 @@ LasData_t read(const std::string& filePath,
   _LLAS_logDebug("LLAS_FLOAT  = " + std::to_string(sizeof(LLAS_FLOAT)));
   _LLAS_logDebug("LLAS_DOUBLE = " + std::to_string(sizeof(LLAS_DOUBLE)));
   _LLAS_logDebug("LLAS_STRING = " + std::to_string(sizeof(LLAS_STRING)));
+#endif
+
+#if defined(LLAS_CHECK_BYTE_SIZE)
+  if (sizeof(LLAS_CHAR) != 1) {
+    _LLAS_logError("Byte size check failed: LLAS_CHAR");
+    return nullptr;
+  }
+  if (sizeof(LLAS_SCHAR) != 1) {
+    _LLAS_logError("Byte size check failed: LLAS_SCHAR");
+    return nullptr;
+  }
+  if (sizeof(LLAS_UCHAR) != 1) {
+    _LLAS_logError("Byte size check failed: LLAS_UCHAR");
+    return nullptr;
+  }
+  if (sizeof(LLAS_SHORT) != 2) {
+    _LLAS_logError("Byte size check failed: LLAS_SHORT");
+    return nullptr;
+  }
+  if (sizeof(LLAS_USHORT) != 2) {
+    _LLAS_logError("Byte size check failed: LLAS_USHORT");
+    return nullptr;
+  }
+  if (sizeof(LLAS_LONG) != 4) {
+    _LLAS_logError("Byte size check failed: LLAS_LONG");
+    return nullptr;
+  }
+  if (sizeof(LLAS_ULONG) != 4) {
+    _LLAS_logError("Byte size check failed: LLAS_ULONG");
+    return nullptr;
+  }
+  if (sizeof(LLAS_LLONG) != 8) {
+    _LLAS_logError("Byte size check failed: LLAS_LLONG");
+    return nullptr;
+  }
+  if (sizeof(LLAS_ULLONG) != 8) {
+    _LLAS_logError("Byte size check failed: LLAS_ULLONG");
+    return nullptr;
+  }
+  if (sizeof(LLAS_FLOAT) != 4) {
+    _LLAS_logError("Byte size check failed: LLAS_FLOAT");
+    return nullptr;
+  }
+  if (sizeof(LLAS_DOUBLE) != 8) {
+    _LLAS_logError("Byte size check failed: LLAS_DOUBLE");
+    return nullptr;
+  }
 #endif
 
   bool isOK = true;
@@ -1509,7 +1562,7 @@ LasData_t read(const std::string& filePath,
     if (!pointDataOnly) {
       _LLAS_logInfo("nVariableLengthRecords: " + std::to_string(nVariableLengthRecords));
 
-      variableLengthRecords.resize(nVariableLengthRecords);
+      variableLengthRecords.resize(nVariableLengthRecords);  // allocate
       std::vector<char> buffer(LLAS_BUFFER_SIZE);
 
       for (LLAS_ULONG iRecord = 0; iRecord < nVariableLengthRecords; ++iRecord) {
@@ -1536,7 +1589,7 @@ LasData_t read(const std::string& filePath,
   {
     _LLAS_logInfo("nPointRecords: " + std::to_string(nPointRecords));
 
-    pointDataRecords.resize(nPointRecords);
+    pointDataRecords.resize(nPointRecords);  // allocate
     std::vector<char> buffer(LLAS_BUFFER_SIZE);
 
     for (LLAS_ULLONG iRecord = 0; iRecord < nPointRecords; ++iRecord) {
@@ -1560,7 +1613,7 @@ LasData_t read(const std::string& filePath,
     if (!pointDataOnly) {
       _LLAS_logInfo("nExtendedVariableLengthRecords: " + std::to_string(nExtendedVariableLengthRecords));
 
-      extendedVariableLengthRecords.resize(nExtendedVariableLengthRecords);
+      extendedVariableLengthRecords.resize(nExtendedVariableLengthRecords);  // allocate
       std::vector<char> buffer(LLAS_BUFFER_SIZE);
 
       for (LLAS_ULONG iRecord = 0; iRecord < nExtendedVariableLengthRecords; ++iRecord) {
@@ -1575,7 +1628,7 @@ LasData_t read(const std::string& filePath,
   // ======================================================================================================================
   // Create output object
   // ======================================================================================================================
-  LasData_t lasData = nullptr;
+  LasData_ptr lasData = nullptr;
 
   if (isOK) {
     lasData = std::make_shared<LasData>();

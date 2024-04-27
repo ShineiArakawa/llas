@@ -18,14 +18,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+  set(CMAKE_CXX_FLAGS_DEBUG "/DLLAS_PRINT_BYTES /DLLAS_LOG_DEBUG")
+  set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DLLAS_LOG_INFO")
 elseif(UNIX)
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -DLLAS_PRINT_BYTES -DLLAS_LOG_INFO")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DLLAS_LOG_INFO")
 endif()
-
-add_definitions(-DLLAS_PRINT_BYTES)
-add_definitions(-DLLAS_FULL_VERBOSITY)
 
 # #################################################
 # #### Envirionment Variables #####################

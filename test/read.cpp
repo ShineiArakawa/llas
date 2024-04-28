@@ -2,8 +2,8 @@
 
 int main(int argc, char** argv) {
 #if defined(_WIN64)
-  // const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\Palac_Moszna.las");
-  const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las", false);
+  const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\Palac_Moszna.las", false);
+  // const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las", false);
 #else
   const auto& data = llas::read("/home/shinaraka/Projects/llas/sample/Palac_Moszna.las");
 #endif

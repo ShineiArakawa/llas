@@ -648,7 +648,12 @@ struct PublicHeader {
         startOfFirstExtendedVariableLengthRecord(),
         numOfExtendedVariableLengthRecords(),
         numOfPointRecords(),
-        numOfPointsByReturn() {
+        numOfPointsByReturn(),
+        hasStartOfWaveformDataPacketRecord(),
+        hasStartOfFirstExtendedVariableLengthRecord(),
+        hasNumOfExtendedVariableLengthRecords(),
+        hasNumOfPointRecords(),
+        hasNumOfPointsByReturn() {
   }
 
   // clang-format off
@@ -689,6 +694,12 @@ struct PublicHeader {
   LLAS_ULONG     numOfExtendedVariableLengthRecords;
   LLAS_ULLONG    numOfPointRecords;
   LLAS_ULLONG    numOfPointsByReturn[NUM_BYTES_NUM_OF_POINTS_BY_RETURN / sizeof(LLAS_ULLONG)];
+
+  bool hasStartOfWaveformDataPacketRecord;
+  bool hasStartOfFirstExtendedVariableLengthRecord;
+  bool hasNumOfExtendedVariableLengthRecords;
+  bool hasNumOfPointRecords;
+  bool hasNumOfPointsByReturn;
   // clang-format on
 
   static PublicHeader readPublicHeader(std::ifstream& file) {
@@ -756,6 +767,17 @@ struct PublicHeader {
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_VERSION_MINOR;
       _readBytes(file, buffer, nBytes);
       std::memcpy(&publicHeader.versionMinor, buffer.data(), sizeof(LLAS_UCHAR));
+
+      if (publicHeader.versionMinor >= 3) {
+        publicHeader.hasStartOfWaveformDataPacketRecord = true;
+      }
+
+      if (publicHeader.versionMinor >= 4) {
+        publicHeader.hasStartOfFirstExtendedVariableLengthRecord = true;
+        publicHeader.hasNumOfExtendedVariableLengthRecords = true;
+        publicHeader.hasNumOfPointRecords = true;
+        publicHeader.hasNumOfPointsByReturn = true;
+      }
     }
 
     {
@@ -923,35 +945,35 @@ struct PublicHeader {
       std::memcpy(&publicHeader.minZ, buffer.data(), sizeof(LLAS_DOUBLE));
     }
 
-    {
+    if (publicHeader.hasStartOfWaveformDataPacketRecord) {
       // Start of Waveform Data Packet Record
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_START_OF_WAVEFORM_DATA_PACKET_RECORD;
       _readBytes(file, buffer, nBytes);
       std::memcpy(&publicHeader.startOfWaveformDataPacketRecord, buffer.data(), sizeof(LLAS_ULLONG));
     }
 
-    {
+    if (publicHeader.hasStartOfFirstExtendedVariableLengthRecord) {
       // Start of First Extended Variable Length Record
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_START_OF_FIRST_EXTENDED_VARIABLE_LENGTH_RECORD;
       _readBytes(file, buffer, nBytes);
       std::memcpy(&publicHeader.startOfFirstExtendedVariableLengthRecord, buffer.data(), sizeof(LLAS_ULLONG));
     }
 
-    {
+    if (publicHeader.hasNumOfExtendedVariableLengthRecords) {
       // Number of Extended Variable Length Records
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_NUM_OF_EXTENDED_VARIABLE_LENGTH_RECORDS;
       _readBytes(file, buffer, nBytes);
       std::memcpy(&publicHeader.numOfExtendedVariableLengthRecords, buffer.data(), sizeof(LLAS_ULONG));
     }
 
-    {
+    if (publicHeader.hasNumOfPointRecords) {
       // Number of Point Records
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_NUM_OF_POINT_RECORDS;
       _readBytes(file, buffer, nBytes);
       std::memcpy(&publicHeader.numOfPointRecords, buffer.data(), sizeof(LLAS_ULLONG));
     }
 
-    {
+    if (publicHeader.hasNumOfPointsByReturn) {
       // Number of Points by Return
       const std::streamsize nBytes = PublicHeader::NUM_BYTES_NUM_OF_POINTS_BY_RETURN;
       _readBytes(file, buffer, nBytes);
@@ -993,7 +1015,8 @@ struct VariableLengthRecord {
   // clang-format on
 
   static VariableLengthRecord readVariableLengthRecord(std::ifstream& file,
-                                                       std::vector<char>& buffer) {
+                                                       std::vector<char>& buffer,
+                                                       const PublicHeader& header) {
     VariableLengthRecord vlr;
 
     {
@@ -1031,11 +1054,13 @@ struct VariableLengthRecord {
       std::copy(buffer.begin(), buffer.begin() + nBytes, vlr.description);
     }
 
-    {
+    if (vlr.recordLengthAfterHeader <= 65535) {
       // Record
       const std::streamsize nBytes = (std::streamsize)vlr.recordLengthAfterHeader;
       vlr.record.resize(nBytes);
       _readBytes(file, vlr.record, nBytes);  // Read directly
+    } else {
+      _LLAS_logError("Exceed the payload limit of variable length record: " << vlr.recordLengthAfterHeader);
     }
 
     return vlr;
@@ -1550,20 +1575,24 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
     return nullptr;  // return nullptr
   }
 
-  const bool isLegacyFormat = format < 6;
+  const bool isLegacyFormat = format <= 5;
 
   // ======================================================================================================================
   // Read 'Variable Length Records'
   // ======================================================================================================================
-  const LLAS_ULONG nVariableLengthRecords = publicHeader.numOfVariableLengthRecords;
 
   std::vector<VariableLengthRecord> variableLengthRecords;
   {
     if (!pointDataOnly) {
+      const LLAS_ULONG nVariableLengthRecords = publicHeader.numOfVariableLengthRecords;
       _LLAS_logInfo("nVariableLengthRecords: " + std::to_string(nVariableLengthRecords));
 
       variableLengthRecords.resize(nVariableLengthRecords);  // allocate
       std::vector<char> buffer(LLAS_BUFFER_SIZE);
+
+      // NOTE: Move to the starting point of VLR
+      const std::streamsize byteOffset = publicHeader.headerSize;
+      file.seekg(byteOffset, std::ios::beg);
 
       for (LLAS_ULONG iRecord = 0; iRecord < nVariableLengthRecords; ++iRecord) {
         const std::streampos newPos = file.tellg();
@@ -1574,7 +1603,7 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
           break;
         }
 
-        VariableLengthRecord variableLengthRecord = VariableLengthRecord::readVariableLengthRecord(file, buffer);
+        const auto variableLengthRecord = VariableLengthRecord::readVariableLengthRecord(file, buffer, publicHeader);
         variableLengthRecords[iRecord] = variableLengthRecord;
       }
     }
@@ -1583,22 +1612,22 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
   // ======================================================================================================================
   // Read 'Point Data Records'
   // ======================================================================================================================
-  const LLAS_ULLONG nPointRecords = isLegacyFormat ? publicHeader.legacyNumOfPointRecords : publicHeader.numOfPointRecords;
 
   std::vector<PointDataRecord> pointDataRecords;
   {
+    const LLAS_ULLONG nPointRecords = isLegacyFormat ? publicHeader.legacyNumOfPointRecords : publicHeader.numOfPointRecords;
     _LLAS_logInfo("nPointRecords: " + std::to_string(nPointRecords));
 
     pointDataRecords.resize(nPointRecords);  // allocate
     std::vector<char> buffer(LLAS_BUFFER_SIZE);
 
     for (LLAS_ULLONG iRecord = 0; iRecord < nPointRecords; ++iRecord) {
-      // Move to the starting point of Point Data Record
+      // NOTE: Move to the starting point of each Point Data Record
       const std::streamsize byteOffset = publicHeader.offsetToPointData + iRecord * publicHeader.pointDataRecordLength;
-
       file.seekg(byteOffset, std::ios::beg);
 
-      const PointDataRecord pointDataRecord = PointDataRecord::readPointDataRecord(file, buffer, format);
+      // Read
+      const auto pointDataRecord = PointDataRecord::readPointDataRecord(file, buffer, format);
       pointDataRecords[iRecord] = pointDataRecord;
     }
   }
@@ -1606,18 +1635,25 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
   // ======================================================================================================================
   // Read 'Extended Variable Length Records'
   // ======================================================================================================================
-  const LLAS_ULONG nExtendedVariableLengthRecords = publicHeader.numOfExtendedVariableLengthRecords;
 
   std::vector<ExtendedVariableLengthRecord> extendedVariableLengthRecords;
   {
-    if (!pointDataOnly) {
+    // version >= 1.4
+    if (!pointDataOnly && publicHeader.hasStartOfFirstExtendedVariableLengthRecord && publicHeader.hasNumOfExtendedVariableLengthRecords) {
+      const LLAS_ULONG nExtendedVariableLengthRecords = publicHeader.numOfExtendedVariableLengthRecords;
       _LLAS_logInfo("nExtendedVariableLengthRecords: " + std::to_string(nExtendedVariableLengthRecords));
 
-      extendedVariableLengthRecords.resize(nExtendedVariableLengthRecords);  // allocate
+      // Allocate
+      extendedVariableLengthRecords.resize(nExtendedVariableLengthRecords);
       std::vector<char> buffer(LLAS_BUFFER_SIZE);
 
+      // NOTE: Move to the starting point of EVLR
+      const std::streamsize byteOffset = publicHeader.startOfFirstExtendedVariableLengthRecord;
+      file.seekg(byteOffset, std::ios::beg);
+
+      // Read
       for (LLAS_ULONG iRecord = 0; iRecord < nExtendedVariableLengthRecords; ++iRecord) {
-        const ExtendedVariableLengthRecord extendedVariableLengthRecord = ExtendedVariableLengthRecord::readExtendedVariableLengthRecord(file, buffer);
+        const auto extendedVariableLengthRecord = ExtendedVariableLengthRecord::readExtendedVariableLengthRecord(file, buffer);
         extendedVariableLengthRecords[iRecord] = extendedVariableLengthRecord;
       }
     }
@@ -1637,8 +1673,6 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
     lasData->variableLengthRecords = variableLengthRecords;
     lasData->pointDataRecords = pointDataRecords;
     lasData->extendedVariableLengthRecord = extendedVariableLengthRecords;
-
-    lasData->validate();
   }
 
   const auto endTime = std::chrono::system_clock::now();

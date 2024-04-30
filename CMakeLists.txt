@@ -40,7 +40,7 @@ set(PROJECT_TEST_DIR ${PROJECT_SOURCE_DIR}/test)
 # #################################################
 # #### Test Projects ##############################
 # #################################################
-set(PROJECT_NAME_TEST_LLAS_READ test_LLas_read)
+set(PROJECT_NAME_TEST_LLAS_READ test_llas_read)
 
 project(${PROJECT_NAME_TEST_LLAS_READ} CXX)
 
@@ -53,6 +53,15 @@ target_include_directories(
   ${PROJECT_NAME_TEST_LLAS_READ}
   PRIVATE
   ${PROJECT_INCLUDE_DIR}
+)
+
+# #################################################
+# #### Install ####################################
+# #################################################
+install(
+	DIRECTORY ${PROJECT_INCLUDE_DIR}
+	DESTINATION ${CMAKE_INSTALL_PREFIX}
+	FILES_MATCHING PATTERN "*.hpp"
 )
 
 # #################################################

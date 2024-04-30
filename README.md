@@ -4,7 +4,8 @@ A simple, header-only, las-format file reader.
 ## Features
 - Header-only
 - Only used STL libraries
-- Compatible with v1.4 LAS format (PointDataRecordFormat: 0 to 4)
+- Compatible with v1.2/v1.3/v1.4 LAS format (PointDataRecordFormat: 0 to 4)
+- Read 33M points in 2 seconds
 
 ## Usage
 You only have to include `include/llas.hpp` file.

@@ -2,21 +2,30 @@
 
 int main(int argc, char** argv) {
 #if defined(_WIN64)
-  // const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\Palac_Moszna.las", false);
-  const auto& data = llas::read("C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las", false);
+  const std::vector<std::string> TEST_FILE_PATHS = {
+      "C:\\Users\\araka\\Projects\\data\\Palac_Moszna.las",
+      "C:\\Users\\araka\\Projects\\data\\G_Sw_Anny.las",
+      "C:\\Users\\araka\\Projects\\data\\Trimble_StSulpice-Cloud-50mm.las"};
 #else
-  const auto& data = llas::read("/home/shinaraka/Projects/llas/sample/Palac_Moszna.las");
+  const std::vector<std::string> TEST_FILE_PATHS = {
+      "/home/shinaraka/Projects/llas/sample/Palac_Moszna.las",
+      "/home/shinaraka/Projects/llas/sample/G_Sw_Anny.las",
+      "/home/shinaraka/Projects/llas/sample/Trimble_StSulpice-Cloud-50mm.las"};
 #endif
 
-  if (data) {
-    const size_t& nPoints = data->getNumPoints();
-    std::cout << "nPoints: " << nPoints << std::endl;
+  for (const auto& filePath : TEST_FILE_PATHS) {
+    const auto& data = llas::read(filePath);
 
-    const auto& coords = data->getPointCoords(false);
-    std::cout << "coords.size(): " << coords.size() << std::endl;
+    if (data) {
+      const size_t& nPoints = data->getNumPoints();
+      std::cout << "nPoints: " << nPoints << std::endl;
 
-    const auto& colors = data->getPointColors();
-    std::cout << "colors.size(): " << colors.size() << std::endl;
+      const auto& coords = data->getPointCoords();
+      std::cout << "coords.size(): " << coords.size() << std::endl;
+
+      const auto& colors = data->getPointColors();
+      std::cout << "colors.size(): " << colors.size() << std::endl;
+    }
   }
 
   return 0;

@@ -8,9 +8,9 @@ int main(int argc, char** argv) {
       "C:\\Users\\araka\\Projects\\data\\Trimble_StSulpice-Cloud-50mm.las"};
 #else
   const std::vector<std::string> TEST_FILE_PATHS = {
-      "/home/shinaraka/Projects/llas/sample/Palac_Moszna.las",
-      "/home/shinaraka/Projects/llas/sample/G_Sw_Anny.las",
-      "/home/shinaraka/Projects/llas/sample/Trimble_StSulpice-Cloud-50mm.las"};
+      "/home/araka/Projects/llas/sample/Palac_Moszna.las",
+      "/home/araka/Projects/llas/sample/G_Sw_Anny.las",
+      "/home/araka/Projects/llas/sample/Trimble_StSulpice-Cloud-50mm.las"};
 #endif
 
   for (const auto& filePath : TEST_FILE_PATHS) {

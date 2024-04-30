@@ -22,7 +22,7 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DLLAS_LOG_INFO")
 elseif(UNIX)
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -DLLAS_PRINT_BYTES -DLLAS_LOG_DEBUG -DLLAS_CHECK_BYTE_SIZE")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mtune=native -march=native -DLLAS_LOG_INFO")
 endif()
 
 # #################################################

@@ -101,11 +101,7 @@ namespace llas {
 // Utility Functions
 // ==========================================================================
 
-LLAS_FUNC_DECL_PREFIX void _readBytes(std::ifstream& ifs,
-                                      std::vector<char>& bytes,
-                                      const std::streamsize& nBytes) {
-  ifs.read(bytes.data(), nBytes);
-}
+// Nothing
 
 // ==========================================================================
 // Math utility
@@ -1536,7 +1532,10 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
   }
 #endif
 
+#if defined(LLAS_MEASURE_TIME)
   const auto startTime = std::chrono::system_clock::now();
+#endif
+
   bool isOK = true;
 
   _LLAS_logInfo("Start reading file: " + filePath);
@@ -1670,9 +1669,11 @@ LLAS_FUNC_DECL_PREFIX LasData_ptr read(const std::string& filePath,
     lasData->extendedVariableLengthRecord = extendedVariableLengthRecords;
   }
 
+#if defined(LLAS_MEASURE_TIME)
   const auto endTime = std::chrono::system_clock::now();
   const double elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
   _LLAS_logInfo("Elapsed time: " + std::to_string(elapsedTime * 1e-6) + " [sec]");
+#endif
 
   return lasData;
 };
